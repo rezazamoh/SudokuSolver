@@ -1,87 +1,85 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
-from torchvision import datasets
-from torchvision import transforms
 from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import os
+from tqdm import tqdm
 
 from models.cnn import SudokuCNN
 
-transform = transforms.Compose([
 
-    transforms.Grayscale(),
-    transforms.Resize((28,28)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,),(0.5,))
-])
+def train_model():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
-train_dataset = datasets.ImageFolder(
-    "dataset/train",
-    transform=transform
-)
+    BATCH_SIZE = 64
+    EPOCHS = 15
+    LEARNING_RATE = 0.001
 
-test_dataset = datasets.ImageFolder(
-    "dataset/test",
-    transform=transform
-)
+    transform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((28, 28)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
 
-train_loader = DataLoader(
-    train_dataset,
-    batch_size=64,
-    shuffle=True
-)
+    train_dataset = datasets.ImageFolder(root='dataset/train', transform=transform)
+    test_dataset = datasets.ImageFolder(root='dataset/test', transform=transform)
 
-test_loader = DataLoader(
-    test_dataset,
-    batch_size=64
-)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
-device = torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"
-)
+    model = SudokuCNN().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 
-model = SudokuCNN().to(device)
+    best_acc = 0.0
+    for epoch in range(EPOCHS):
+        model.train()
+        running_loss = 0.0
+        correct = 0
+        total = 0
 
-criterion = nn.CrossEntropyLoss()
+        loop = tqdm(train_loader, leave=True)
+        for images, labels in loop:
+            images, labels = images.to(device), labels.to(device)
 
-optimizer = optim.Adam(
-    model.parameters(),
-    lr=0.001
-)
+            # Forward pass
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
-epochs = 10
+            # Backward pass & Optimize
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
-for epoch in range(epochs):
+            running_loss += loss.item()
+            _, predicted = outputs.max(1)
+            total += labels.size(0)
+            correct += predicted.eq(labels).sum().item()
 
-    model.train()
+            loop.set_description(f"Epoch [{epoch+1}/{EPOCHS}]")
+            loop.set_postfix(loss=running_loss/len(train_loader), acc=100.*correct/total)
 
-    total_loss = 0
+        model.eval()
+        test_correct = 0
+        test_total = 0
+        with torch.no_grad():
+            for images, labels in test_loader:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                _, predicted = outputs.max(1)
+                test_total += labels.size(0)
+                test_correct += predicted.eq(labels).sum().item()
 
-    for images, labels in train_loader:
+        test_acc = 100. * test_correct / test_total
+        print(f'Test Accuracy after Epoch {epoch+1}: {test_acc:.2f}%')
 
-        images = images.to(device)
-        labels = labels.to(device)
+        if test_acc > best_acc:
+            best_acc = test_acc
+            torch.save(model.state_dict(), 'sudoku_model.pth')
+            print(f"--> Best model saved with accuracy: {best_acc:.2f}%")
 
-        optimizer.zero_grad()
-
-        outputs = model(images)
-
-        loss = criterion(outputs,labels)
-
-        loss.backward()
-
-        optimizer.step()
-
-        total_loss += loss.item()
-
-    print(
-        f"Epoch {epoch+1} Loss {total_loss:.4f}"
-    )
-
-torch.save(
-    model.state_dict(),
-    "best_model.pth"
-)
-
-print("Training Finished")
+if __name__ == "__main__":
+    train_model()
