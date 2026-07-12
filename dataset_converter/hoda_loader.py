@@ -1,67 +1,31 @@
 import os
-
 from raw_data.HODA.HodaDatasetReader import read_hoda_cdb
-
-from dataset_converter.preprocess import preprocess_image
-
+from .preprocess import preprocess_image
 
 class HODALoader:
-
-    def __init__(self, root):
-
-        self.root = root
+    def __init__(self, base_path):
+        self.base_path = base_path
 
     def load(self):
+        train_path = os.path.join(self.base_path, "Train 60000.cdb")
+        test_path = os.path.join(self.base_path, "Test 20000.cdb")
 
-        train_images, train_labels = read_hoda_cdb(
-            os.path.join(
-                self.root,
-                "DigitDB",
-                "Train 60000.cdb"
-            )
-        )
+        print(f"   Reading HODA Train from: {train_path}")
+        train_images, train_labels = read_hoda_cdb(train_path)
+        
+        print(f"   Reading HODA Test from: {test_path}")
+        test_images, test_labels = read_hoda_cdb(test_path)
 
-        test_images, test_labels = read_hoda_cdb(
-            os.path.join(
-                self.root,
-                "DigitDB",
-                "Test 20000.cdb"
-            )
-        )
+        processed_train = []
+        for img, lbl in zip(train_images, train_labels):
+            p = preprocess_image(img)
+            if p is not None:
+                processed_train.append((p, lbl))
 
-        train = self._prepare(
-            train_images,
-            train_labels
-        )
+        processed_test = []
+        for img, lbl in zip(test_images, test_labels):
+            p = preprocess_image(img)
+            if p is not None:
+                processed_test.append((p, lbl))
 
-        test = self._prepare(
-            test_images,
-            test_labels
-        )
-
-        return train, test
-
-    def _prepare(
-        self,
-        images,
-        labels
-    ):
-
-        data = []
-
-        for img, label in zip(images, labels):
-
-            # حذف رقم صفر
-            if int(label) == 0:
-                continue
-
-            img = preprocess_image(img)
-
-            data.append(
-                (
-                    img,
-                    int(label)
-                )
-            )
-
-        return data
+        return processed_train, processed_test

@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-IMAGE_SIZE = 32
+IMAGE_SIZE = 28
 
 
 def preprocess_image(img):
@@ -12,6 +12,8 @@ def preprocess_image(img):
         size = 32x32
         black digit on white background
     """
+    if img is None or img.size == 0:
+        return None
 
     img = np.array(img)
 

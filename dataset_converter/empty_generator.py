@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import random
 
-IMAGE_SIZE = 32
+IMAGE_SIZE = 28
 
 
 class EmptyCellGenerator:

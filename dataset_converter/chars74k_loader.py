@@ -1,52 +1,41 @@
 import os
 import cv2
-
-from dataset_converter.preprocess import preprocess_image
-
+import random
+from .preprocess import preprocess_image
 
 class Chars74KLoader:
-
-    def __init__(self, root):
-
-        self.root = root
+    def __init__(self, base_path, train_ratio=0.8):
+        self.base_path = base_path
+        self.train_ratio = train_ratio
 
     def load(self):
+        all_data = []
 
-        train = []
-        test = []
+        for digit in range(10):
+            folder_path = os.path.join(self.base_path, str(digit))
 
-        # Sample002 تا Sample010
-        for digit in range(1, 10):
+            if not os.path.exists(folder_path):
+                print(f"   Warning: folder not found: {folder_path}, skipping...")
+                continue
 
-            folder = os.path.join(
-                self.root,
-                "English",
-                "Fnt",
-                f"Sample{digit+1:03d}"
-            )
+            print(f"   Loading digit {digit} from: {folder_path}")
 
-            images = []
+            for file in os.listdir(folder_path):
+                img_path = os.path.join(folder_path, file)
 
-            for file in sorted(os.listdir(folder)):
-
-                if not file.lower().endswith((".png", ".jpg", ".bmp")):
+                if not os.path.isfile(img_path):
                     continue
 
-                path = os.path.join(folder, file)
+                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                processed = preprocess_image(img)
 
-                img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+                if processed is not None:
+                    all_data.append((processed, digit))
 
-                if img is None:
-                    continue
+        random.shuffle(all_data)
 
-                img = preprocess_image(img)
+        split_idx = int(len(all_data) * self.train_ratio)
+        train_data = all_data[:split_idx]
+        test_data = all_data[split_idx:]
 
-                images.append((img, digit))
-
-            split = int(len(images) * 0.8)
-
-            train.extend(images[:split])
-
-            test.extend(images[split:])
-
-        return train, test
+        return train_data, test_data
