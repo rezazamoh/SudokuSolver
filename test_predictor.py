@@ -7,7 +7,7 @@ predictor = Predictor(
 )
 
 image = cv2.imread(
-    "test_images/000016.png",
+    "test_images/test_predict.png",
     cv2.IMREAD_GRAYSCALE
 )
 

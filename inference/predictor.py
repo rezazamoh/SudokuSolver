@@ -3,8 +3,9 @@ import numpy as np
 
 import torch
 import torch.nn.functional as F
-
 from models.cnn import SudokuCNN
+from dataset_converter.preprocess import preprocess_image
+from image_processing.extract_digit import extract_digit
 
 
 class Predictor:
@@ -52,12 +53,12 @@ class Predictor:
                 cv2.COLOR_BGR2GRAY
             )
 
-        # Resize
-        image = cv2.resize(
-            image,
-            (32, 32),
-            interpolation=cv2.INTER_AREA
-        )
+        digit = extract_digit(image)
+
+        if digit is None:
+            return None
+
+        image = preprocess_image(digit)
 
         # Normalize
         image = image.astype(np.float32) / 255.0
@@ -76,10 +77,17 @@ class Predictor:
         image = image.to(self.device)
 
         return image
-    
+
     def predict(self, image):
 
         image = self._preprocess(image)
+
+        if image is None:
+            return (
+                0,
+                1.0,
+                None
+            )
 
         with torch.no_grad():
 

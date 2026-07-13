@@ -27,30 +27,70 @@ board = warp(image, corners)
 cells = split_cells(board)
 
 os.makedirs("output", exist_ok=True)
+os.makedirs("output/cells", exist_ok=True)
+
+# ذخیره مراحل پردازش
+cv2.imwrite("output/original.png", image)
 cv2.imwrite("output/gray.png", gray)
+cv2.imwrite("output/blur.png", blur)
 cv2.imwrite("output/threshold.png", thresh)
 cv2.imwrite("output/board.png", board)
 
+# ذخیره تمام سلول‌ها
+for i in range(9):
+    for j in range(9):
+        cv2.imwrite(
+            f"output/cells/{i}_{j}.png",
+            cells[i][j]
+        )
+
 print("Predicting cells...")
+
 sudoku_grid = []
 
 for i in range(9):
+
     row_digits = []
+
     for j in range(9):
-        digit, confidence, _ = predictor.predict(cells[i][j])
+
+        # فقط برای تست
+        if i == 0 and j == 0:
+            cv2.imwrite(
+                "output/test_predict.png",
+                cells[i][j]
+            )
+
+        digit, confidence, _ = predictor.predict(
+            cells[i][j]
+        )
+
+        print(
+            f"Cell ({i},{j}) -> {digit} ({confidence:.3f})"
+        )
+
         row_digits.append(digit)
+
     sudoku_grid.append(row_digits)
 
 print("\n--- Board detected by CNN ---")
+
 for row in sudoku_grid:
-    print(row)
+    print(" ".join(map(str, row)))
 
 print("\nSolving sudoku...")
+
 grid_copy = [row[:] for row in sudoku_grid]
 
 if solve_sudoku(grid_copy):
+
     print("\n--- Solved Sudoku ---")
+
     for row in grid_copy:
         print(row)
+
 else:
-    print("\nNo solution exists for the detected board. Please check detection accuracy.")
+
+    print(
+        "\nNo solution exists for the detected board. Please check detection accuracy."
+    )
