@@ -5,9 +5,10 @@ from image_processing.grid_detector import find_grid
 from image_processing.perspective import warp
 from image_processing.split_cells import split_cells
 from inference.predictor import Predictor
+from image_processing.remove_grid_lsd import remove_grid_lsd
 from solver import solve_sudoku
 
-IMAGE_PATH = "images/4845408.jpg"
+IMAGE_PATH = "images/images.jpg"
 MODEL_PATH = "weights/best_model.pth"
 
 if not os.path.exists(IMAGE_PATH):
@@ -23,6 +24,10 @@ image = cv2.imread(IMAGE_PATH)
 gray, blur, thresh = preprocess(image)
 corners = find_grid(thresh)
 board = warp(image, corners)
+board = remove_grid_lsd(
+    board,
+    debug=True
+)
 cells = split_cells(board)
 
 os.makedirs("output", exist_ok=True)

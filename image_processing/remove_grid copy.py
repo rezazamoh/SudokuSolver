@@ -66,13 +66,13 @@ def remove_grid(board, debug=False):
         cv2.CHAIN_APPROX_SIMPLE
     )
 
-    x,y,w,h = cv2.boundingRect(cnt)
+    x,y,w,h = cv2.boundingRect(contours)
     grid_mask = np.zeros_like(candidates)
     
 
     cv2.drawContours(
         grid_mask,
-        [cnt],
+        [contours],
         -1,
         255,
         thickness=5

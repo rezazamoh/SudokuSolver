@@ -79,6 +79,10 @@ class Predictor:
 
         image = preprocess_image(digit)
 
+        cv2.imwrite(
+            f"output/extracted_digits/{self.debug_counter + 100:02d}.png",
+            image
+        )
         # Normalize
         image = image.astype(np.float32) / 255.0
 
@@ -87,6 +91,7 @@ class Predictor:
             image,
             axis=0
         )
+
 
         image = torch.from_numpy(image)
 
@@ -107,7 +112,7 @@ class Predictor:
                 1.0,
                 None
             )
-
+        
         with torch.no_grad():
 
             outputs = self.model(image)

@@ -51,29 +51,31 @@ def extract_digit(cell):
     mx = int(w * 0.20)
     my = int(h * 0.20)
 
-
-    center_region = labels[
+    # ---------------- Center Occupancy Test ----------------
+    center_binary = thresh[
         cy-my:cy+my,
         cx-mx:cx+mx
     ]
 
+    pixels = cv2.countNonZero(center_binary)
 
-    labels_in_center = np.unique(
-        center_region
-    )
+    ratio = pixels / center_binary.size
 
-
-    # حذف پس زمینه
-    labels_in_center = labels_in_center[
-        labels_in_center != 0
-    ]
-
-
-    # چیزی در مرکز نیست => خانه خالی
-    if len(labels_in_center) == 0:
+    # اگر وسط تقریباً خالی است
+    if ratio < 0.12:
         return None, False
 
+    # حالا فقط Labelهای داخل مرکز را پیدا کن
+    center_labels = labels[
+        cy-my:cy+my,
+        cx-mx:cx+mx
+    ]
 
+    labels_in_center = np.unique(center_labels)
+    labels_in_center = labels_in_center[labels_in_center != 0]
+
+    if len(labels_in_center) == 0:
+        return None, False
 
     # ---------------- انتخاب Component مرکزی ----------------
     best_label = None
