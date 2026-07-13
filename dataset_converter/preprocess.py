@@ -12,6 +12,8 @@ def preprocess_image(img):
         size = 32x32
         black digit on white background
     """
+    if img is None or img.size == 0:
+        return None
 
     img = np.array(img)
 

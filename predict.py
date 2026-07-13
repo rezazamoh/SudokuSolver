@@ -1,47 +1,15 @@
-import cv2
-import torch
+from inference.predictor import Predictor
 
-from torchvision import transforms
+_predictor = None
 
-from models.cnn import SudokuCNN
 
-device = torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"
-)
+def _get_predictor():
+    global _predictor
+    if _predictor is None:
+        _predictor = Predictor("weights/best_model.pth")
+    return _predictor
 
-model = SudokuCNN().to(device)
-
-model.load_state_dict(
-    torch.load(
-        "best_model.pth",
-        map_location=device
-    )
-)
-
-model.eval()
-
-transform = transforms.Compose([
-
-    transforms.ToPILImage(),
-    transforms.Resize((28,28)),
-    transforms.Grayscale(),
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,),(0.5,))
-])
 
 def predict_digit(cell):
-
-    img = transform(cell)
-
-    img = img.unsqueeze(0).to(device)
-
-    with torch.no_grad():
-
-        output = model(img)
-
-        pred = torch.argmax(
-            output,
-            dim=1
-        )
-
-    return pred.item()
+    digit, _, _ = _get_predictor().predict(cell)
+    return digit
