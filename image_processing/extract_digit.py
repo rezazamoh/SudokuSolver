@@ -4,42 +4,158 @@ import numpy as np
 
 def extract_digit(cell):
 
-    # Gray
+    # ---------------- Gray ----------------
     if len(cell.shape) == 3:
-        gray = cv2.cvtColor(cell, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(
+            cell,
+            cv2.COLOR_BGR2GRAY
+        )
     else:
         gray = cell.copy()
 
-    # حذف خطوط دور خانه
+
     h, w = gray.shape
-    margin = 4
-    gray = gray[margin:h-margin, margin:w-margin]
 
-    # Binary
-    _, thresh = cv2.threshold(
+
+    # ---------------- Threshold ----------------
+    thresh = cv2.adaptiveThreshold(
         gray,
-        0,
         255,
-        cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        11,
+        2
     )
 
-    contours, _ = cv2.findContours(
+
+    # حذف نویز خیلی ریز
+    thresh = cv2.morphologyEx(
         thresh,
-        cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE
+        cv2.MORPH_OPEN,
+        np.ones((2,2), np.uint8)
     )
 
-    if len(contours) == 0:
-        return None
 
-    cnt = max(contours, key=cv2.contourArea)
+    # ---------------- Connected Components ----------------
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        thresh,
+        connectivity=8
+    )
 
-    # اگر کانتور خیلی کوچک بود خانه خالی است
-    if cv2.contourArea(cnt) < 40:
-        return None
 
-    x, y, w, h = cv2.boundingRect(cnt)
+    # ---------------- Center Region Check ----------------
+    cx = w // 2
+    cy = h // 2
 
-    digit = thresh[y:y+h, x:x+w]
+    # حدود 40 درصد وسط سلول
+    mx = int(w * 0.20)
+    my = int(h * 0.20)
 
-    return digit
+
+    center_region = labels[
+        cy-my:cy+my,
+        cx-mx:cx+mx
+    ]
+
+
+    labels_in_center = np.unique(
+        center_region
+    )
+
+
+    # حذف پس زمینه
+    labels_in_center = labels_in_center[
+        labels_in_center != 0
+    ]
+
+
+    # چیزی در مرکز نیست => خانه خالی
+    if len(labels_in_center) == 0:
+        return None, False
+
+
+
+    # ---------------- انتخاب Component مرکزی ----------------
+    best_label = None
+    best_area = 0
+
+
+    for label in labels_in_center:
+
+        area = stats[
+            label,
+            cv2.CC_STAT_AREA
+        ]
+
+        if area > best_area:
+            best_area = area
+            best_label = label
+
+
+    if best_label is None:
+        return None, False
+
+
+
+    # ---------------- Crop Digit ----------------
+    x = stats[
+        best_label,
+        cv2.CC_STAT_LEFT
+    ]
+
+    y = stats[
+        best_label,
+        cv2.CC_STAT_TOP
+    ]
+
+    ww = stats[
+        best_label,
+        cv2.CC_STAT_WIDTH
+    ]
+
+    hh = stats[
+        best_label,
+        cv2.CC_STAT_HEIGHT
+    ]
+
+
+    # حذف موارد خیلی کشیده (خط جدول)
+    if ww > 0.8*w and hh < 0.2*h:
+        return None, False
+
+    if hh > 0.8*h and ww < 0.2*w:
+        return None, False
+
+
+
+    pad = 3
+
+    x = max(
+        0,
+        x-pad
+    )
+
+    y = max(
+        0,
+        y-pad
+    )
+
+
+    ww = min(
+        w-x,
+        ww + 2*pad
+    )
+
+    hh = min(
+        h-y,
+        hh + 2*pad
+    )
+
+
+    digit = gray[
+        y:y+hh,
+        x:x+ww
+    ]
+
+
+    return digit, True

@@ -1,6 +1,5 @@
 import cv2
 import os
-
 from image_processing.preprocess import preprocess
 from image_processing.grid_detector import find_grid
 from image_processing.perspective import warp
@@ -8,7 +7,7 @@ from image_processing.split_cells import split_cells
 from inference.predictor import Predictor
 from solver import solve_sudoku
 
-IMAGE_PATH = "images/sudoku.png"
+IMAGE_PATH = "images/4845408.jpg"
 MODEL_PATH = "weights/best_model.pth"
 
 if not os.path.exists(IMAGE_PATH):
@@ -17,7 +16,7 @@ if not os.path.exists(IMAGE_PATH):
 if not os.path.exists(MODEL_PATH):
     raise FileNotFoundError(f"No {MODEL_PATH} exists. Run train.py first.")
 
-predictor = Predictor(MODEL_PATH)
+predictor = Predictor(MODEL_PATH,debug=True)
 
 image = cv2.imread(IMAGE_PATH)
 

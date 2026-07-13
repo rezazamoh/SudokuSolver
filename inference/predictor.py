@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-
+import os
 import torch
 import torch.nn.functional as F
 from models.cnn import SudokuCNN
@@ -13,7 +13,8 @@ class Predictor:
     def __init__(
         self,
         model_path,
-        device=None
+        device=None,
+        debug=False
     ):
 
         if device is None:
@@ -28,6 +29,8 @@ class Predictor:
 
             self.device = device
 
+        self.debug = debug
+        self.debug_counter = 0
         self.model = SudokuCNN()
 
         checkpoint = torch.load(
@@ -53,7 +56,23 @@ class Predictor:
                 cv2.COLOR_BGR2GRAY
             )
 
-        digit = extract_digit(image)
+        digit, has_digit = extract_digit(image)
+
+        if not has_digit:
+            return None
+        
+        if digit is not None and digit.size < 50:
+            digit = None
+        
+        if self.debug and digit is not None:
+            os.makedirs("output/extracted_digits", exist_ok=True)
+
+            cv2.imwrite(
+                f"output/extracted_digits/{self.debug_counter:02d}.png",
+                digit
+            )
+
+        self.debug_counter += 1
 
         if digit is None:
             return None

@@ -1,6 +1,2 @@
-import torch
-
-print("Torch:", torch.__version__)
-print("CUDA:", torch.version.cuda)
-print("CUDA available:", torch.cuda.is_available())
-print("Device:", torch.cuda.get_device_name(0))
+import cv2
+print(cv2.__version__)
