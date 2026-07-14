@@ -5,96 +5,93 @@ from image_processing.grid_detector import find_grid
 from image_processing.perspective import warp
 from image_processing.split_cells import split_cells
 from inference.predictor import Predictor
-from image_processing.remove_grid_lsd import remove_grid_lsd
-from solver import solve_sudoku
+from solver import solve_sudoku, is_board_valid
+
 
 IMAGE_PATH = "images/images.jpg"
 MODEL_PATH = "weights/best_model.pth"
 
-if not os.path.exists(IMAGE_PATH):
-    raise FileNotFoundError(f"No {IMAGE_PATH} exists.")
 
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"No {MODEL_PATH} exists. Run train.py first.")
+def main():
+    # Check whether the input image exists
+    if not os.path.exists(IMAGE_PATH):
+        raise FileNotFoundError(f"Input image was not found at: {IMAGE_PATH}")
 
-predictor = Predictor(MODEL_PATH,debug=True)
-
-image = cv2.imread(IMAGE_PATH)
-
-gray, blur, thresh = preprocess(image)
-corners = find_grid(thresh)
-board = warp(image, corners)
-board = remove_grid_lsd(
-    board,
-    debug=True
-)
-cells = split_cells(board)
-
-os.makedirs("output", exist_ok=True)
-os.makedirs("output/cells", exist_ok=True)
-
-# ذخیره مراحل پردازش
-cv2.imwrite("output/original.png", image)
-cv2.imwrite("output/gray.png", gray)
-cv2.imwrite("output/blur.png", blur)
-cv2.imwrite("output/threshold.png", thresh)
-cv2.imwrite("output/board.png", board)
-
-# ذخیره تمام سلول‌ها
-for i in range(9):
-    for j in range(9):
-        cv2.imwrite(
-            f"output/cells/{i}_{j}.png",
-            cells[i][j]
+    # Check whether the trained model weights exist
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError(
+            f"Model weights were not found at: {MODEL_PATH}. Train the model first."
         )
 
-print("Predicting cells...")
+    # Initialize the digit predictor and enable debug output
+    predictor = Predictor(MODEL_PATH, debug=True)
 
-sudoku_grid = []
+    # Read the original image
+    image = cv2.imread(IMAGE_PATH)
 
-for i in range(9):
+    if image is None:
+        raise ValueError(f"Could not read image from: {IMAGE_PATH}")
 
-    row_digits = []
+    # Preprocess the image to get grayscale, blurred, and thresholded versions
+    gray, blur, thresh = preprocess(image)
 
-    for j in range(9):
+    # Detect the four corners of the Sudoku grid
+    corners = find_grid(thresh)
 
-        # فقط برای تست
-        if i == 0 and j == 0:
-            cv2.imwrite(
-                "output/test_predict.png",
-                cells[i][j]
-            )
+    # Apply perspective transform to both the original and grayscale images
+    board_color = warp(image, corners)
+    board_gray = warp(gray, corners)
 
-        digit, confidence, _ = predictor.predict(
-            cells[i][j]
-        )
+    # Save warped board images for debugging
+    os.makedirs("output", exist_ok=True)
+    cv2.imwrite("output/board_color.png", board_color)
+    cv2.imwrite("output/board_gray.png", board_gray)
 
-        print(
-            f"Cell ({i},{j}) -> {digit} ({confidence:.3f})"
-        )
+    # Split the warped grayscale board into 81 individual cells
+    cells = split_cells(board_gray)
 
-        row_digits.append(digit)
+    os.makedirs("output/cells", exist_ok=True)
 
-    sudoku_grid.append(row_digits)
+    sudoku_grid = []
+    print("Detecting digits from Sudoku cells...")
 
-print("\n--- Board detected by CNN ---")
+    for i in range(9):
+        row_digits = []
 
-for row in sudoku_grid:
-    print(" ".join(map(str, row)))
+        for j in range(9):
+            cell_img = cells[i][j]
 
-print("\nSolving sudoku...")
+            # Save each raw cell image for debugging
+            cv2.imwrite(f"output/cells/{i}_{j}.png", cell_img)
 
-grid_copy = [row[:] for row in sudoku_grid]
+            # Predict the digit inside the current cell
+            digit, confidence, _ = predictor.predict(cell_img)
 
-if solve_sudoku(grid_copy):
+            row_digits.append(digit)
 
-    print("\n--- Solved Sudoku ---")
+        sudoku_grid.append(row_digits)
 
-    for row in grid_copy:
-        print(row)
+    print("\n--- Detected Sudoku Grid ---")
+    for row in sudoku_grid:
+        print(" ".join(map(str, row)))
 
-else:
+    # Validate the detected grid before solving it
+    if not is_board_valid(sudoku_grid):
+        print("\n[Error] The detected Sudoku grid is invalid.")
+        print("There is a conflict in a row, column, or 3x3 box.")
+        print("Please check the input image quality or digit recognition model.")
+        return
 
-    print(
-        "\nNo solution exists for the detected board. Please check detection accuracy."
-    )
+    print("\nSolving Sudoku...")
+    grid_copy = [row[:] for row in sudoku_grid]
+
+    if solve_sudoku(grid_copy):
+        print("\n--- Solved Sudoku Grid ---")
+        for row in grid_copy:
+            print(" ".join(map(str, row)))
+    else:
+        print("\nNo solution was found for the detected Sudoku grid.")
+
+
+if __name__ == "__main__":
+    main()
