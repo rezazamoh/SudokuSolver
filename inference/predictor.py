@@ -3,7 +3,7 @@ import numpy as np
 import os
 import torch
 import torch.nn.functional as F
-
+from debug_pipeline import save_pipeline
 from models.cnn import SudokuCNN
 from dataset_converter.preprocess import preprocess_image
 from image_processing.extract_digit import extract_digit
@@ -22,7 +22,8 @@ class Predictor:
 
         self.debug = debug
         self.debug_counter = 0
-
+        self.raw_digit = None
+        self.processed = None
         # Define model architecture and load saved weights
         self.model = SudokuCNN()
         checkpoint = torch.load(model_path, map_location=self.device)
@@ -39,6 +40,7 @@ class Predictor:
 
         # Extract the digit region from the Sudoku cell
         digit, has_digit = extract_digit(gray)
+        self.raw_digit = None if digit is None else digit.copy()
 
         if not has_digit or digit is None:
             return None
@@ -57,7 +59,7 @@ class Predictor:
 
         # Convert the extracted digit to the same format used during training
         processed_digit = preprocess_image(digit)
-
+        self.processed = image.copy()
         # Save processed digit for debugging using original file name format
         if self.debug:
             cv2.imwrite(
@@ -96,6 +98,14 @@ class Predictor:
             probabilities = F.softmax(outputs, dim=1)
             confidence, prediction = torch.max(probabilities, dim=1)
 
+
+        save_pipeline(
+            raw_cell=image,
+            digit=self.raw_digit,
+            processed=self.processed,
+            pred=prediction.item(),
+            conf=confidence.item()
+        )
         return (
             prediction.item(),
             confidence.item(),

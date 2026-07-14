@@ -61,6 +61,7 @@ if uploaded_file is not None:
         st.subheader("Input Image")
         st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), use_container_width=True)
 
+    debug_images = {}
     with st.spinner("Processing image and extracting Sudoku board..."):
         try:
             # Preprocess the input image
@@ -95,9 +96,24 @@ if uploaded_file is not None:
                     st.image(thresh, use_container_width=True)
 
                 with mid_col2:
-                    st.text("Sample Extracted Cell")
-                    if len(cells) > 0:
-                        st.image(cells[0], width=100)
+                    st.text("Extracted Cells (9×9)")
+
+                    if len(cells) == 81:
+
+                        cols = st.columns(9)
+
+                        for i, cell in enumerate(cells):
+
+                            with cols[i % 9]:
+                                st.caption(f"{i//9},{i%9}")
+                                st.image(
+                                    cell,
+                                    clamp=True,
+                                    use_container_width=True,
+                                )
+
+                            if (i + 1) % 9 == 0 and i != 80:
+                                cols = st.columns(9)
 
             # Run digit recognition if the model is available
             if predictor is not None:
