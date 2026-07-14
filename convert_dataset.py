@@ -148,8 +148,8 @@ def main():
 
     make_folders()
 
-    #save_dataset(train, "train")
-    #save_dataset(test, "test")
+    save_dataset(train, "train")
+    save_dataset(test, "test")
 
     print()
 
