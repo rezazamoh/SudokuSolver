@@ -8,7 +8,7 @@ from inference.predictor import Predictor
 from solver import solve_sudoku, is_board_valid
 
 
-IMAGE_PATH = "images/images.jpg"
+IMAGE_PATH = "images/4845408.jpg"
 MODEL_PATH = "weights/best_model.pth"
 
 

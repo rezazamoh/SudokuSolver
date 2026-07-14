@@ -1,4 +1,3 @@
-# image_processing/extract_digit.py
 import cv2
 import numpy as np
 
