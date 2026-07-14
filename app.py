@@ -120,17 +120,34 @@ if uploaded_file is not None:
                 grid = np.zeros((9, 9), dtype=int)
                 progress_bar = st.progress(0, text="Recognizing digits...")
 
+                all_probabilities = []
+
                 for i in range(81):
                     row, col = divmod(i, 9)
                     cell = cells[i]
 
                     # Predictor handles digit extraction internally
-                    pred_digit, confidence, probabilities = predictor.predict(cell)
+                    pred_digit, confidence, probabilities = predictor.predict(
+                        cell, save_debug_pipeline=False
+                    )
                     grid[row][col] = pred_digit
+                    all_probabilities.append(probabilities)
 
                     progress_bar.progress((i + 1) / 81)
 
                 progress_bar.empty()
+
+                board_language = predictor.detect_board_language(all_probabilities)
+                if board_language is not None:
+                    st.info(f"Detected board language: {board_language}")
+
+                corrected_grid = np.zeros((9, 9), dtype=int)
+                for i in range(81):
+                    row, col = divmod(i, 9)
+                    corrected_digit, _ = predictor.language_corrected_prediction(
+                        all_probabilities[i], board_language
+                    )
+                    corrected_grid[row][col] = corrected_digit
 
                 st.subheader("Detected Grid")
                 grid_col1, grid_col2 = st.columns(2)
@@ -139,8 +156,12 @@ if uploaded_file is not None:
                     st.write("Initial Matrix:")
                     st.dataframe(grid)
 
-                # Copy the detected board before solving
-                board_to_solve = grid.copy()
+                with grid_col2:
+                    st.write("Corrected Matrix:")
+                    st.dataframe(corrected_grid)
+
+                # Copy the corrected board before solving
+                board_to_solve = corrected_grid.copy()
 
                 if not is_board_valid(board_to_solve):
                     st.error(

@@ -9,7 +9,7 @@ from inference.predictor import Predictor
 from solver import solve_sudoku, is_board_valid
 
 
-IMAGE_PATH = "images/4845408.jpg"
+IMAGE_PATH = "images/sudoku.png"
 MODEL_PATH = "weights/best_model.pth"
 
 
@@ -61,9 +61,11 @@ def main():
     print("Detecting digits from Sudoku cells...")
 
     sudoku_grid = []
+    all_probabilities = []
 
     for i in range(9):
         row_digits = []
+        row_probabilities = []
 
         for j in range(9):
             cell_img = cells[i][j]
@@ -75,13 +77,34 @@ def main():
             if i == 0 and j == 0:
                 cv2.imwrite("output/test_predict.png", cell_img)
 
-            digit, confidence, _ = predictor.predict(cell_img)
+            digit, confidence, probabilities = predictor.predict(
+                cell_img, save_debug_pipeline=False
+            )
 
             print(f"Cell ({i},{j}) -> {digit} ({confidence:.3f})")
 
             row_digits.append(digit)
+            row_probabilities.append(probabilities)
 
         sudoku_grid.append(row_digits)
+        all_probabilities.append(row_probabilities)
+
+    flat_probabilities = [prob for row in all_probabilities for prob in row]
+    board_language = predictor.detect_board_language(flat_probabilities)
+    if board_language is not None:
+        print(f"Detected board language: {board_language}")
+
+    corrected_grid = []
+    for row_probs in all_probabilities:
+        corrected_row = []
+        for probabilities in row_probs:
+            corrected_digit, _ = predictor.language_corrected_prediction(
+                probabilities, board_language
+            )
+            corrected_row.append(corrected_digit)
+        corrected_grid.append(corrected_row)
+
+    sudoku_grid = corrected_grid
 
     print("\n--- Detected Sudoku Grid ---")
     for row in sudoku_grid:

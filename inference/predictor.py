@@ -31,7 +31,8 @@ class Predictor:
         self.model.to(self.device)
         self.model.eval()
 
-    def _class_to_digit(self, predicted_class):
+    @staticmethod
+    def _class_to_digit(predicted_class):
         if predicted_class == 0:
             return 0
         if 1 <= predicted_class <= 9:
@@ -39,6 +40,78 @@ class Predictor:
         if 10 <= predicted_class <= 18:
             return predicted_class - 9
         raise ValueError(f"Invalid predicted class: {predicted_class}")
+
+    @classmethod
+    def class_to_digit(cls, predicted_class):
+        return cls._class_to_digit(predicted_class)
+
+    @staticmethod
+    def _class_language(predicted_class):
+        if 1 <= predicted_class <= 9:
+            return "english"
+        if 10 <= predicted_class <= 18:
+            return "farsi"
+        return None
+
+    @staticmethod
+    def _digit_language_class(digit, language):
+        if digit == 0:
+            return 0
+        if language == "english":
+            return digit
+        return digit + 9
+
+    @staticmethod
+    def detect_board_language(all_probabilities):
+        english_count = 0
+        farsi_count = 0
+        english_sum = 0.0
+        farsi_sum = 0.0
+
+        for probabilities in all_probabilities:
+            if probabilities is None:
+                continue
+
+            best_class = int(np.argmax(probabilities))
+            if best_class == 0:
+                continue
+
+            if 1 <= best_class <= 9:
+                english_count += 1
+            elif 10 <= best_class <= 18:
+                farsi_count += 1
+
+            english_sum += float(np.max(probabilities[1:10]))
+            farsi_sum += float(np.max(probabilities[10:19]))
+
+        if english_count + farsi_count == 0:
+            return None
+
+        if english_count != farsi_count:
+            return "english" if english_count > farsi_count else "farsi"
+
+        return "english" if english_sum >= farsi_sum else "farsi"
+
+    @classmethod
+    def language_corrected_prediction(cls, probabilities, board_language):
+        if probabilities is None:
+            return 0, 1.0
+
+        raw_best = int(np.argmax(probabilities))
+        if raw_best == 0 or board_language is None:
+            return cls.class_to_digit(raw_best), float(probabilities[raw_best])
+
+        raw_language = cls._class_language(raw_best)
+        if raw_language == board_language:
+            return cls.class_to_digit(raw_best), float(probabilities[raw_best])
+
+        raw_digit = cls._class_to_digit(raw_best)
+        board_class = cls._digit_language_class(raw_digit, board_language)
+
+        if float(probabilities[board_class]) >= float(probabilities[raw_best]):
+            return cls.class_to_digit(board_class), float(probabilities[board_class])
+
+        return cls.class_to_digit(raw_best), float(probabilities[raw_best])
 
     def _preprocess(self, image):
         # Convert colored image to grayscale if needed
@@ -92,7 +165,7 @@ class Predictor:
 
         return tensor_img
 
-    def predict(self, image):
+    def predict(self, image, board_language=None, save_debug_pipeline=True):
         # Preprocess the Sudoku cell image
         processed_img = self._preprocess(image)
 
@@ -100,27 +173,37 @@ class Predictor:
         if processed_img is None:
             probabilities = np.zeros(19, dtype=np.float32)
             probabilities[0] = 1.0
+            if save_debug_pipeline:
+                save_pipeline(
+                    raw_cell=image,
+                    digit=self.raw_digit,
+                    processed=self.processed,
+                    pred=0,
+                    conf=1.0,
+                )
             return 0, 1.0, probabilities
 
         # Run inference using the neural network
         with torch.no_grad():
             outputs = self.model(processed_img)
-            probabilities = F.softmax(outputs, dim=1)
-            confidence, prediction = torch.max(probabilities, dim=1)
+            probabilities = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
 
-        predicted_class = prediction.item()
-        digit = self._class_to_digit(predicted_class)
+        if board_language is not None:
+            digit, confidence = self.language_corrected_prediction(
+                probabilities, board_language
+            )
+        else:
+            raw_best = int(np.argmax(probabilities))
+            digit = self._class_to_digit(raw_best)
+            confidence = float(probabilities[raw_best])
 
-        save_pipeline(
-            raw_cell=image,
-            digit=self.raw_digit,
-            processed=self.processed,
-            pred=digit,
-            conf=confidence.item()
-        )
+        if save_debug_pipeline:
+            save_pipeline(
+                raw_cell=image,
+                digit=self.raw_digit,
+                processed=self.processed,
+                pred=digit,
+                conf=confidence,
+            )
 
-        return (
-            digit,
-            confidence.item(),
-            probabilities.squeeze().cpu().numpy()
-        )
+        return digit, confidence, probabilities

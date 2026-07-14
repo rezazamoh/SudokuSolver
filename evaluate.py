@@ -51,7 +51,7 @@ loader = DataLoader(
 )
 
 
-model = SudokuCNN(num_classes=10).to(DEVICE)
+model = SudokuCNN(num_classes=19).to(DEVICE)
 
 checkpoint = torch.load(
     MODEL_PATH,
@@ -133,26 +133,50 @@ cm = confusion_matrix(
     y_pred
 )
 
+# Draw a confusion matrix with blue diagonal and red off-diagonal cells
+fig, ax = plt.subplots(figsize=(8, 8))
 
-disp = ConfusionMatrixDisplay(
-    confusion_matrix=cm
-)
+mask = np.eye(cm.shape[0], dtype=bool)
 
-fig, ax = plt.subplots(figsize=(8,8))
+# Normalize blue using the full matrix range, but normalize red using only off-diagonal errors.
+blue_norm = plt.Normalize(vmin=cm.min(), vmax=cm.max())
+red_values = cm[~mask]
+red_max = float(red_values.max()) if red_values.size > 0 else 1.0
+red_norm = plt.Normalize(vmin=0.0, vmax=max(red_max, 1.0))
 
-disp.plot(
-    ax=ax,
-    cmap="Blues",
-    colorbar=False
-)
+cm_blue = plt.cm.Blues(blue_norm(cm))
+cm_red = plt.cm.Reds(red_norm(cm))
+
+# Build an RGB image: diagonal cells use blue, off-diagonal cells use red
+image = np.zeros_like(cm_blue)
+image[mask] = cm_blue[mask]
+image[~mask] = cm_red[~mask]
+
+ax.imshow(image, aspect='equal')
+ax.set_xlabel('Predicted label')
+ax.set_ylabel('True label')
+ax.set_title('Confusion Matrix (blue=correct, red=errors)')
+
+# Add ticks and labels
+labels = np.arange(cm.shape[0])
+ax.set_xticks(labels)
+ax.set_yticks(labels)
+ax.set_xticklabels(labels)
+ax.set_yticklabels(labels)
+ax.xaxis.set_ticks_position('top')
+ax.xaxis.set_label_position('top')
+
+# Annotate counts, with text color that contrasts against background
+for i in range(cm.shape[0]):
+    for j in range(cm.shape[1]):
+        text_color = 'white' if image[i, j, :3].mean() < 0.5 else 'black'
+        ax.text(j, i, cm[i, j], ha='center', va='center', color=text_color)
 
 plt.tight_layout()
-
 plt.savefig(
     "output/confusion_matrix.png",
     dpi=300
 )
-
 plt.close()
 
 
