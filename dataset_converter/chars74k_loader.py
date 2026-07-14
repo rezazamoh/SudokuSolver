@@ -1,4 +1,5 @@
 import os
+import random
 import cv2
 
 from dataset_converter.preprocess import preprocess_image
@@ -6,47 +7,38 @@ from dataset_converter.preprocess import preprocess_image
 
 class Chars74KLoader:
 
-    def __init__(self, root):
-
+    def __init__(self, root, test_split=0.2, seed=42):
         self.root = root
+        self.test_split = test_split
+        self.seed = seed
 
     def load(self):
+        data = []
 
-        train = []
-        test = []
+        for label in range(1, 10):
+            folder = os.path.join(self.root, str(label))
 
-        # Sample002 تا Sample010
-        for digit in range(1, 10):
+            if not os.path.isdir(folder):
+                raise FileNotFoundError(f"Missing folder: {folder}")
 
-            folder = os.path.join(
-                self.root,
-                "English",
-                "Fnt",
-                f"Sample{digit+1:03d}"
-            )
+            for file_name in sorted(os.listdir(folder)):
+                path = os.path.join(folder, file_name)
 
-            images = []
-
-            for file in sorted(os.listdir(folder)):
-
-                if not file.lower().endswith((".png", ".jpg", ".bmp")):
+                if not os.path.isfile(path):
                     continue
 
-                path = os.path.join(folder, file)
-
-                img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
-
-                if img is None:
+                image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+                if image is None:
                     continue
 
-                img = preprocess_image(img)
+                image = preprocess_image(image)
+                data.append((image, label))
 
-                images.append((img, digit))
+        rng = random.Random(self.seed)
+        rng.shuffle(data)
 
-            split = int(len(images) * 0.8)
-
-            train.extend(images[:split])
-
-            test.extend(images[split:])
+        split_idx = int(len(data) * (1 - self.test_split))
+        train = data[:split_idx]
+        test = data[split_idx:]
 
         return train, test

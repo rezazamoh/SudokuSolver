@@ -26,6 +26,8 @@ WEIGHTS_DIR = "weights"
 
 BATCH_SIZE = 256
 NUM_WORKERS = 4
+NUM_CLASSES = 19
+IMAGE_SIZE = 32
 
 EPOCHS = 50
 
@@ -37,6 +39,7 @@ PATIENCE = 8
 DEVICE = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
 )
+
 
 # ==========================
 # Accuracy Function
@@ -70,9 +73,10 @@ def save_checkpoint(model, optimizer, epoch, loss):
         )
     )
 
+
 def main():
 
-    # بهینه‌سازی برای GPU
+    # Enable backend optimizations when running on GPU
     torch.backends.cudnn.benchmark = True
     torch.set_float32_matmul_precision("high")
 
@@ -109,14 +113,15 @@ def main():
 
     print("=" * 50)
 
-
     # ==========================
     # Data Augmentation
     # ==========================
 
     train_transform = transforms.Compose([
 
-        transforms.Grayscale(),
+        transforms.Grayscale(num_output_channels=1),
+
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
 
         transforms.RandomRotation(8),
 
@@ -132,12 +137,13 @@ def main():
 
     test_transform = transforms.Compose([
 
-        transforms.Grayscale(),
+        transforms.Grayscale(num_output_channels=1),
+
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
 
         transforms.ToTensor()
 
     ])
-
 
     # ==========================
     # Dataset
@@ -153,6 +159,7 @@ def main():
         transform=test_transform
     )
 
+    print("Class mapping:", train_dataset.class_to_idx)
 
     # ==========================
     # DataLoader
@@ -197,15 +204,13 @@ def main():
     # Model
     # ==========================
 
-    model = SudokuCNN(num_classes=10).to(DEVICE)
-
+    model = SudokuCNN(num_classes=NUM_CLASSES).to(DEVICE)
 
     # ==========================
     # Loss Function
     # ==========================
 
     criterion = nn.CrossEntropyLoss()
-
 
     # ==========================
     # Optimizer
@@ -220,7 +225,6 @@ def main():
         weight_decay=WEIGHT_DECAY
 
     )
-
 
     # ==========================
     # Learning Rate Scheduler
@@ -240,7 +244,6 @@ def main():
 
     )
 
-
     # ==========================
     # Mixed Precision
     # ==========================
@@ -252,14 +255,13 @@ def main():
         enabled=USE_AMP
     )
 
-
     # ==========================
     # Early Stopping
     # ==========================
 
     best_loss = float("inf")
-
     epochs_without_improvement = 0
+
     # ==========================
     # Training Loop
     # ==========================
@@ -296,13 +298,10 @@ def main():
             ):
 
                 outputs = model(images)
-
                 loss = criterion(outputs, labels)
 
             scaler.scale(loss).backward()
-
             scaler.step(optimizer)
-
             scaler.update()
 
             acc = calculate_accuracy(outputs, labels)
@@ -312,7 +311,7 @@ def main():
 
             train_bar.set_postfix(
                 loss=f"{loss.item():.4f}",
-                acc=f"{acc*100:.2f}%"
+                acc=f"{acc * 100:.2f}%"
             )
 
         train_loss /= len(train_loader)
@@ -353,7 +352,6 @@ def main():
                 ):
 
                     outputs = model(images)
-
                     loss = criterion(outputs, labels)
 
                 acc = calculate_accuracy(
@@ -371,19 +369,18 @@ def main():
 
         print(
             f"Train Loss : {train_loss:.4f} | "
-            f"Train Acc : {train_acc*100:.2f}%"
+            f"Train Acc  : {train_acc * 100:.2f}%"
         )
 
         print(
             f"Val Loss   : {val_loss:.4f} | "
-            f"Val Acc   : {val_acc*100:.2f}%"
+            f"Val Acc    : {val_acc * 100:.2f}%"
         )
 
         current_lr = optimizer.param_groups[0]["lr"]
 
         print(f"Learning Rate : {current_lr:.6f}")
 
-        
         # ==========================
         # CSV Logging
         # ==========================
@@ -400,7 +397,6 @@ def main():
                 val_acc,
                 current_lr
             ])
-
 
         # ==========================
         # TensorBoard Logging
@@ -443,7 +439,6 @@ def main():
         if val_loss < best_loss:
 
             best_loss = val_loss
-
             epochs_without_improvement = 0
 
             save_checkpoint(
@@ -453,7 +448,7 @@ def main():
                 val_loss
             )
 
-            print("✓ Best model saved.")
+            print("Best model saved.")
 
         else:
 
@@ -470,12 +465,12 @@ def main():
         if epochs_without_improvement >= PATIENCE:
 
             print("\nEarly stopping triggered.")
-
             break
 
     tb_writer.close()
 
     print("\nTraining Finished!")
+
 
 if __name__ == "__main__":
     import multiprocessing

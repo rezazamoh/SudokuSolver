@@ -1,3 +1,4 @@
+import os
 import struct
 import numpy as np
 
@@ -7,25 +8,24 @@ from dataset_converter.preprocess import preprocess_image
 class MNISTLoader:
 
     def __init__(self, root):
-
         self.root = root
 
     def load(self):
 
         train_images = self._read_images(
-            self.root + "/train-images.idx3-ubyte"
+            os.path.join(self.root, "train-images-idx3-ubyte")
         )
 
         train_labels = self._read_labels(
-            self.root + "/train-labels.idx1-ubyte"
+            os.path.join(self.root, "train-labels-idx1-ubyte")
         )
 
         test_images = self._read_images(
-            self.root + "/t10k-images.idx3-ubyte"
+            os.path.join(self.root, "t10k-images-idx3-ubyte")
         )
 
         test_labels = self._read_labels(
-            self.root + "/t10k-labels.idx1-ubyte"
+            os.path.join(self.root, "t10k-labels-idx1-ubyte")
         )
 
         train = self._prepare(
@@ -40,22 +40,17 @@ class MNISTLoader:
 
         return train, test
 
-    def _prepare(
-        self,
-        images,
-        labels
-    ):
+    def _prepare(self, images, labels):
 
         data = []
 
         for img, label in zip(images, labels):
 
-            # صفر حذف می‌شود
+            # Skip zero so classes remain 1-9 for English digits
             if label == 0:
                 continue
 
             img = 255 - img
-
             img = preprocess_image(img)
 
             data.append(

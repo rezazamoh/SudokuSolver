@@ -12,71 +12,69 @@ from dataset_converter.empty_generator import EmptyCellGenerator
 
 
 OUTPUT_PATH = "dataset"
+NUM_CLASSES = 19
+
 
 def check_dataset(name, data):
-    labels = [label for _, label in data]
+    labels = [int(label) for _, label in data]
     print(f"\n{name}")
     print("Min:", min(labels))
     print("Max:", max(labels))
     print("Unique:", sorted(set(labels))[:30])
     print("Count:", len(set(labels)))
+    print("Distribution:", dict(sorted(Counter(labels).items())))
+
 
 def make_folders():
-
     if os.path.exists(OUTPUT_PATH):
         shutil.rmtree(OUTPUT_PATH)
 
     for split in ["train", "test"]:
-
-        for cls in range(19):
-
+        for cls in range(NUM_CLASSES):
             os.makedirs(
                 os.path.join(
                     OUTPUT_PATH,
                     split,
-                    str(cls)
+                    f"{cls:02d}"
                 ),
                 exist_ok=True
             )
 
 
 def save_dataset(data, split):
-
-    counter = [0] * 19
+    counter = [0] * NUM_CLASSES
 
     for image, label in tqdm(
         data,
         desc=f"Saving {split}",
         unit="img"
     ):
+        label = int(label)
+
+        if not 0 <= label < NUM_CLASSES:
+            raise ValueError(f"Invalid label: {label}")
 
         filename = f"{counter[label]:06d}.png"
 
         path = os.path.join(
             OUTPUT_PATH,
             split,
-            str(label),
+            f"{label:02d}",
             filename
         )
 
         cv2.imwrite(path, image)
-
         counter[label] += 1
 
-def add_empty_cells(train, test):
 
+def add_empty_cells(train, test):
     generator = EmptyCellGenerator()
 
     train_counter = Counter(label for _, label in train)
     test_counter = Counter(label for _, label in test)
 
-    train_target = int(
-        sum(train_counter.values()) / len(train_counter)
-    )
-
-    test_target = int(
-        sum(test_counter.values()) / len(test_counter)
-    )
+    train_target = int(sum(train_counter.values()) / len(train_counter))
+    test_target = int(sum(test_counter.values()) / len(test_counter))
 
     print(f"Generating {train_target} empty train images...")
 
@@ -96,50 +94,46 @@ def add_empty_cells(train, test):
     ):
         test.append((generator.generate(), 0))
 
-def main():
 
+def validate_label_ranges(name, data, valid_range):
+    bad = sorted({int(label) for _, label in data if int(label) not in valid_range})
+    if bad:
+        raise ValueError(f"{name} has invalid labels: {bad}")
+
+
+def main():
     print("=" * 60)
     print("Loading datasets...")
     print("=" * 60)
 
     print("✓ Loading MNIST")
-    mnist_train, mnist_test = MNISTLoader("raw_data/MNIST").load()
-
+    mnist_train, mnist_test = MNISTLoader("raw_data/MNIST/MNIST/raw").load()
     print(f"   Train: {len(mnist_train):,}")
     print(f"   Test : {len(mnist_test):,}\n")
 
     print("✓ Loading HODA")
     hoda_train, hoda_test = HODALoader("raw_data/HODA").load()
-
     print(f"   Train: {len(hoda_train):,}")
     print(f"   Test : {len(hoda_test):,}\n")
 
     print("✓ Loading Chars74K")
     chars_train, chars_test = Chars74KLoader("raw_data/Chars74K").load()
-
     print(f"   Train: {len(chars_train):,}")
     print(f"   Test : {len(chars_test):,}\n")
-
 
     check_dataset("MNIST", mnist_train)
     check_dataset("HODA", hoda_train)
     check_dataset("Chars74K", chars_train)
 
+    validate_label_ranges("MNIST train", mnist_train, set(range(1, 10)))
+    validate_label_ranges("MNIST test", mnist_test, set(range(1, 10)))
+    validate_label_ranges("HODA train", hoda_train, set(range(10, 19)))
+    validate_label_ranges("HODA test", hoda_test, set(range(10, 19)))
+    validate_label_ranges("Chars74K train", chars_train, set(range(1, 10)))
+    validate_label_ranges("Chars74K test", chars_test, set(range(1, 10)))
 
-    print("\nMNIST first label:", mnist_train[0][1], type(mnist_train[0][1]))
-    print("HODA first label:", hoda_train[0][1], type(hoda_train[0][1]))
-    print("Chars first label:", chars_train[0][1], type(chars_train[0][1]))
-    train = (
-        mnist_train +
-        hoda_train +
-        chars_train
-    )
-
-    test = (
-        mnist_test +
-        hoda_test +
-        chars_test
-    )
+    train = mnist_train + hoda_train + chars_train
+    test = mnist_test + hoda_test + chars_test
 
     add_empty_cells(train, test)
 
@@ -147,21 +141,15 @@ def main():
     random.shuffle(test)
 
     make_folders()
-
     save_dataset(train, "train")
     save_dataset(test, "test")
 
     print()
-
     print("Dataset created successfully.")
-
     print()
-
     print("Train:", len(train))
-
     print("Test :", len(test))
 
 
 if __name__ == "__main__":
-
     main()
