@@ -60,7 +60,7 @@ class HODALoader:
             data.append(
                 (
                     img,
-                    int(label)
+                    int(label) + 9
                 )
             )
 

@@ -13,6 +13,13 @@ from dataset_converter.empty_generator import EmptyCellGenerator
 
 OUTPUT_PATH = "dataset"
 
+def check_dataset(name, data):
+    labels = [label for _, label in data]
+    print(f"\n{name}")
+    print("Min:", min(labels))
+    print("Max:", max(labels))
+    print("Unique:", sorted(set(labels))[:30])
+    print("Count:", len(set(labels)))
 
 def make_folders():
 
@@ -21,7 +28,7 @@ def make_folders():
 
     for split in ["train", "test"]:
 
-        for cls in range(10):
+        for cls in range(19):
 
             os.makedirs(
                 os.path.join(
@@ -35,7 +42,7 @@ def make_folders():
 
 def save_dataset(data, split):
 
-    counter = [0] * 10
+    counter = [0] * 19
 
     for image, label in tqdm(
         data,
@@ -113,6 +120,15 @@ def main():
     print(f"   Train: {len(chars_train):,}")
     print(f"   Test : {len(chars_test):,}\n")
 
+
+    check_dataset("MNIST", mnist_train)
+    check_dataset("HODA", hoda_train)
+    check_dataset("Chars74K", chars_train)
+
+
+    print("\nMNIST first label:", mnist_train[0][1], type(mnist_train[0][1]))
+    print("HODA first label:", hoda_train[0][1], type(hoda_train[0][1]))
+    print("Chars first label:", chars_train[0][1], type(chars_train[0][1]))
     train = (
         mnist_train +
         hoda_train +
@@ -132,8 +148,8 @@ def main():
 
     make_folders()
 
-    save_dataset(train, "train")
-    save_dataset(test, "test")
+    #save_dataset(train, "train")
+    #save_dataset(test, "test")
 
     print()
 
