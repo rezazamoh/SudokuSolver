@@ -9,8 +9,10 @@ from inference.predictor import Predictor
 from solver import solve_sudoku, is_board_valid
 
 
-IMAGE_PATH = "images/sudoku.png"
-MODEL_PATH = "weights/best_model.pth"
+IMAGE_PATH = "images/4845408.jpg"
+BEST_MODEL_PATH = "weights/best_model.pth"
+ENGLISH_MODEL_PATH = "weights/10classesMINST.pth"
+FARSI_MODEL_PATH = "weights/10classesHoda.pth"
 
 
 def main():
@@ -18,17 +20,27 @@ def main():
     if not os.path.exists(IMAGE_PATH):
         raise FileNotFoundError(f"Input image was not found at: {IMAGE_PATH}")
 
-    if not os.path.exists(MODEL_PATH):
+    if not os.path.exists(BEST_MODEL_PATH):
         raise FileNotFoundError(
-            f"Model weights were not found at: {MODEL_PATH}. Train the model first."
+            f"Model weights were not found at: {BEST_MODEL_PATH}. Train the model first."
+        )
+
+    if not os.path.exists(ENGLISH_MODEL_PATH):
+        raise FileNotFoundError(
+            f"English model weights were not found at: {ENGLISH_MODEL_PATH}."
+        )
+
+    if not os.path.exists(FARSI_MODEL_PATH):
+        raise FileNotFoundError(
+            f"Farsi model weights were not found at: {FARSI_MODEL_PATH}."
         )
 
     # Create output folders
     os.makedirs("output", exist_ok=True)
     os.makedirs("output/cells", exist_ok=True)
 
-    # Load model
-    predictor = Predictor(MODEL_PATH, debug=True)
+    # Load models (language detection + language-specific digit recognition)
+    predictor = Predictor(BEST_MODEL_PATH, ENGLISH_MODEL_PATH, FARSI_MODEL_PATH, debug=True)
 
     # Read image
     image = cv2.imread(IMAGE_PATH)
@@ -77,6 +89,8 @@ def main():
             if i == 0 and j == 0:
                 cv2.imwrite("output/test_predict.png", cell_img)
 
+            # First call will auto-detect board language using 19-class model
+            # Subsequent calls will use the detected language
             digit, confidence, probabilities = predictor.predict(
                 cell_img, save_debug_pipeline=False
             )
@@ -88,23 +102,6 @@ def main():
 
         sudoku_grid.append(row_digits)
         all_probabilities.append(row_probabilities)
-
-    flat_probabilities = [prob for row in all_probabilities for prob in row]
-    board_language = predictor.detect_board_language(flat_probabilities)
-    if board_language is not None:
-        print(f"Detected board language: {board_language}")
-
-    corrected_grid = []
-    for row_probs in all_probabilities:
-        corrected_row = []
-        for probabilities in row_probs:
-            corrected_digit, _ = predictor.language_corrected_prediction(
-                probabilities, board_language
-            )
-            corrected_row.append(corrected_digit)
-        corrected_grid.append(corrected_row)
-
-    sudoku_grid = corrected_grid
 
     print("\n--- Detected Sudoku Grid ---")
     for row in sudoku_grid:

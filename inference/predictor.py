@@ -10,7 +10,7 @@ from image_processing.extract_digit import extract_digit
 
 
 class Predictor:
-    def __init__(self, model_path, device=None, debug=False):
+    def __init__(self, best_model_path, english_model_path, farsi_model_path, device=None, debug=False):
         # Select device automatically (GPU if available, else CPU)
         if device is None:
             self.device = torch.device(
@@ -24,12 +24,26 @@ class Predictor:
         self.raw_digit = None
         self.processed = None
 
-        # Define model architecture and load saved weights
-        self.model = SudokuCNN(num_classes=19)
-        checkpoint = torch.load(model_path, map_location=self.device)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.model.to(self.device)
-        self.model.eval()
+        # Load language detection model (19 classes)
+        self.language_model = SudokuCNN(num_classes=19)
+        checkpoint = torch.load(best_model_path, map_location=self.device)
+        self.language_model.load_state_dict(checkpoint["model_state_dict"])
+        self.language_model.to(self.device)
+        self.language_model.eval()
+
+        # Load English digit recognition model (10 classes: 0-9)
+        self.english_model = SudokuCNN(num_classes=10)
+        checkpoint = torch.load(english_model_path, map_location=self.device)
+        self.english_model.load_state_dict(checkpoint["model_state_dict"])
+        self.english_model.to(self.device)
+        self.english_model.eval()
+
+        # Load Farsi digit recognition model (10 classes: 0-9)
+        self.farsi_model = SudokuCNN(num_classes=10)
+        checkpoint = torch.load(farsi_model_path, map_location=self.device)
+        self.farsi_model.load_state_dict(checkpoint["model_state_dict"])
+        self.farsi_model.to(self.device)
+        self.farsi_model.eval()
 
     @staticmethod
     def _class_to_digit(predicted_class):
@@ -183,19 +197,34 @@ class Predictor:
                 )
             return 0, 1.0, probabilities
 
-        # Run inference using the neural network
+        # Step 1: Detect board language using the 19-class language detection model
         with torch.no_grad():
-            outputs = self.model(processed_img)
-            probabilities = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
+            lang_outputs = self.language_model(processed_img)
+            lang_probabilities = F.softmax(lang_outputs, dim=1).squeeze().cpu().numpy()
 
-        if board_language is not None:
-            digit, confidence = self.language_corrected_prediction(
-                probabilities, board_language
-            )
-        else:
-            raw_best = int(np.argmax(probabilities))
-            digit = self._class_to_digit(raw_best)
-            confidence = float(probabilities[raw_best])
+        # Detect board language from language model output
+        if board_language is None:
+            board_language = self.detect_board_language([lang_probabilities])
+
+        # Step 2: Use the appropriate 10-class model based on detected language
+        model_to_use = self.english_model if board_language == "english" else self.farsi_model
+
+        with torch.no_grad():
+            outputs = model_to_use(processed_img)
+            probabilities_10class = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
+
+        # Get digit and confidence from 10-class model
+        best_class = int(np.argmax(probabilities_10class))
+        digit = best_class  # 10-class model already outputs 0-9 directly
+        confidence = float(probabilities_10class[best_class])
+
+        # Convert 10-class probabilities to 19-class format for consistency
+        probabilities = np.zeros(19, dtype=np.float32)
+        if board_language == "english":
+            probabilities[0:10] = probabilities_10class
+        else:  # farsi
+            probabilities[0] = probabilities_10class[0]  # empty class
+            probabilities[10:19] = probabilities_10class[1:10]  # Farsi digits
 
         if save_debug_pipeline:
             save_pipeline(
