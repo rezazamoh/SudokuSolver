@@ -415,100 +415,149 @@ The complete pipeline of the project can be summarized as follows:
 
 ## How to Run the Project
 
-The exact commands may vary slightly depending on the project structure, but the general workflow is as follows.
+The project can be executed end to end with the following workflow.
 
 ### 1. Prepare the Dataset
 ```bash
 python convert_dataset.py
-
-
-## Project Directory Structure
-This should create:
-
-```text
-dataset/
-  train/
-  test/
 ```
-with subfolders from `00` to `18`.
+This creates the training and test folders under [dataset](dataset) with class subfolders such as `00` to `18`.
 
- 
-
-## Run the Sanity Check
+### 2. Run the Sanity Check
 ```bash
 python sanity_check.py
 ```
-This verifies:
-* Dataset loading
-* Class mapping
-* Image shapes
-* Label shapes
-* Model forward pass
-* Output dimensions
+This verifies dataset loading, image and label shapes, model forward pass behavior, and output dimensions.
 
- 
-
-## Train the Model
+### 3. Train the Model
 ```bash
 python train.py
 ```
-This will:
-* Load `dataset/train` and `dataset/test`
-* Train the CNN classifier
-* Validate after each epoch
-* Save the best model checkpoint
+This trains the CNN classifier, validates after each epoch, and saves the best checkpoint to [weights/best_model.pth](weights/best_model.pth).
 
-**Main output:**
-```text
-weights/best_model.pth
-```
-
- 
-
-## Evaluate the Trained Model
+### 4. Evaluate the Trained Model
 ```bash
 python evaluate.py
 ```
-This generates:
-* `output/classification_report.txt`
-* `output/confusion_matrix.png`
-* Misclassified images in `output/misclassified/`
+This generates the evaluation report and confusion matrix artifacts in [reportpics](reportpics):
+- [reportpics/classification_report.txt](reportpics/classification_report.txt)
+- [reportpics/confusion_matrix.png](reportpics/confusion_matrix.png)
+- misclassified examples in [reportpics/misclassified](reportpics/misclassified)
 
- 
-
-##  Run Full Sudoku Inference
+### 5. Run Full Sudoku Inference
 ```bash
-python run_inference.py
+python main.py
 ```
-This script:
-1. Reads the Sudoku image
-2. Preprocesses it
-3. Detects the board
-4. Warps the board
-5. Removes grid lines
-6. Splits the board into cells
-7. Predicts digits
-8. Detects board language
-9. Corrects predictions
-10. Validates the grid
-11. Solves the Sudoku if valid
+This script reads the sample Sudoku image at [images/sudoku.png](images/sudoku.png), preprocesses it, detects the board, removes grid lines, splits the board into cells, predicts digits, detects the board language, corrects language-specific errors, validates the board, and solves it if possible.
 
- 
-
-## 6. Run the Streamlit Application
+### 6. Run the Streamlit Application
 ```bash
 streamlit run app.py
 ```
 This launches a web interface for interactive Sudoku image upload, recognition, and solving.
 
- 
-
-## 7. Inspect Dataset Structure if Needed
+### 7. Inspect Dataset Structure if Needed
 ```bash
 python test_chars74k.py
 ```
 
- 
+## Example Run Report from main.py
+
+A sample end-to-end inference run is documented below using the tracked report assets in [reportpics](reportpics). Running [main.py](main.py) produces the following outputs:
+
+### Processing pipeline outputs
+
+![Original input](reportpics/original.png)
+![Grayscale](reportpics/gray.png)
+![Blurred](reportpics/blur.png)
+![Thresholded](reportpics/threshold.png)
+
+![Board color](reportpics/board_color.png)
+![Board grayscale](reportpics/board_gray.png)
+![Board without grid lines](reportpics/board_no_grid.png)
+![Sample extracted cell](reportpics/test_predict.png)
+
+### Evaluation outputs
+
+![Confusion matrix](reportpics/confusion_matrix.png)
+![Training history graph](reportpics/training_history.png)
+
+Representative extracted cells and misclassified samples are available in [reportpics/cells](reportpics/cells) and [reportpics/misclassified](reportpics/misclassified). The full 9×9 cell grid is shown below using the extracted-cell images from [output/cells](output/cells):
+
+<div align="center">
+
+| Row 1 | Row 2 | Row 3 |
+|---|---|---|
+| ![Cell 0_0](reportpics/cells/0_0.png) | ![Cell 0_1](reportpics/cells/0_1.png) | ![Cell 0_2](reportpics/cells/0_2.png) |
+| ![Cell 1_0](reportpics/cells/1_0.png) | ![Cell 1_1](reportpics/cells/1_1.png) | ![Cell 1_2](reportpics/cells/1_2.png) |
+| ![Cell 2_0](reportpics/cells/2_0.png) | ![Cell 2_1](reportpics/cells/2_1.png) | ![Cell 2_2](reportpics/cells/2_2.png) |
+
+| Row 4 | Row 5 | Row 6 |
+|---|---|---|
+| ![Cell 3_0](reportpics/cells/3_0.png) | ![Cell 3_1](reportpics/cells/3_1.png) | ![Cell 3_2](reportpics/cells/3_2.png) |
+| ![Cell 4_0](reportpics/cells/4_0.png) | ![Cell 4_1](reportpics/cells/4_1.png) | ![Cell 4_2](reportpics/cells/4_2.png) |
+| ![Cell 5_0](reportpics/cells/5_0.png) | ![Cell 5_1](reportpics/cells/5_1.png) | ![Cell 5_2](reportpics/cells/5_2.png) |
+
+| Row 7 | Row 8 | Row 9 |
+|---|---|---|
+| ![Cell 6_0](reportpics/cells/6_0.png) | ![Cell 6_1](reportpics/cells/6_1.png) | ![Cell 6_2](reportpics/cells/6_2.png) |
+| ![Cell 7_0](reportpics/cells/7_0.png) | ![Cell 7_1](reportpics/cells/7_1.png) | ![Cell 7_2](reportpics/cells/7_2.png) |
+| ![Cell 8_0](reportpics/cells/8_0.png) | ![Cell 8_1](reportpics/cells/8_1.png) | ![Cell 8_2](reportpics/cells/8_2.png) |
+
+</div>
+
+The sample run produced the following detected grid:
+
+```text
+9 8 5 4 0 1 0 0 0
+0 0 0 0 3 0 0 0 0
+1 0 6 0 0 0 0 0 0
+0 0 0 5 0 0 0 0 0
+4 0 2 0 0 9 0 0 3
+0 9 0 0 6 3 4 0 0
+0 6 0 0 1 0 0 0 0
+0 0 0 3 0 6 0 0 5
+2 0 0 0 8 0 0 0 1
+```
+
+After solving, the pipeline recovered the completed Sudoku grid:
+
+```text
+9 8 5 4 2 1 7 3 6
+7 2 4 6 3 8 5 1 9
+1 3 6 9 5 7 8 4 2
+6 7 3 5 4 2 1 9 8
+4 1 2 8 7 9 6 5 3
+5 9 8 1 6 3 4 2 7
+3 6 7 2 1 5 9 8 4
+8 4 1 3 9 6 2 7 5
+2 5 9 7 8 4 3 6 1
+```
+
+The inference run also reported the detected board language as English.
+
+## Evaluation Report from evaluate.py
+
+The evaluation script produces a quantitative report for the trained classifier.
+
+### Latest measured results
+
+- Accuracy: 99.42%
+- Macro average F1-score: 0.9940
+- Weighted average F1-score: 0.9942
+
+The full report is stored in [reportpics/classification_report.txt](reportpics/classification_report.txt), and the visual confusion matrix is saved as [reportpics/confusion_matrix.png](reportpics/confusion_matrix.png). Misclassified samples are also stored in [reportpics/misclassified](reportpics/misclassified) for manual review.
+
+## Project Directory Structure
+
+Key folders and files in the repository include:
+
+- [dataset](dataset) for the prepared train and test images
+- [weights](weights) for the trained model checkpoint
+- [output](output) for inference and evaluation artifacts
+- [runs](runs) for TensorBoard event logs
+- [image_processing](image_processing) for the computer-vision preprocessing modules
+- [inference](inference) for the predictor and prediction logic
 
 ## Strengths of the Project
 * **Complete End-to-End Pipeline:** Full Sudoku OCR and solving flow.
