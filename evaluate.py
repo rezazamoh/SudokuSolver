@@ -22,7 +22,7 @@ DEVICE = torch.device(
 
 TEST_DIR = "dataset/test"
 
-MODEL_PATH = "weights/best_model.pth"
+MODEL_PATH = "weights/10classesHoda.pth"
 
 BATCH_SIZE = 256
 
@@ -51,7 +51,7 @@ loader = DataLoader(
 )
 
 
-model = SudokuCNN(num_classes=19).to(DEVICE)
+model = SudokuCNN(num_classes=10).to(DEVICE)
 
 checkpoint = torch.load(
     MODEL_PATH,
@@ -70,7 +70,7 @@ y_pred = []
 
 
 os.makedirs(
-    "output/misclassified",
+    "output/misclassifiedHODA",
     exist_ok=True
 )
 
@@ -114,7 +114,7 @@ print(classification_report(
 
 
 with open(
-    "output/classification_report.txt",
+    "output/classification_hoda_report.txt",
     "w",
     encoding="utf8"
 ) as f:
@@ -174,7 +174,7 @@ for i in range(cm.shape[0]):
 
 plt.tight_layout()
 plt.savefig(
-    "output/confusion_matrix.png",
+    "output/confusion_matrix_HODA.png",
     dpi=300
 )
 plt.close()

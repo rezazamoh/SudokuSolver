@@ -6,10 +6,10 @@ from image_processing.perspective import warp
 from image_processing.split_cells import split_cells
 from image_processing.remove_grid_lsd import remove_grid_lsd
 from inference.predictor import Predictor
-from solver import solve_sudoku, is_board_valid
+from solver import solve_sudoku, is_board_valid, try_fix_farsi_2_3_conflicts, find_conflicts
 
 
-IMAGE_PATH = "images/4845408.jpg"
+IMAGE_PATH = "images/images.jpg"
 BEST_MODEL_PATH = "weights/best_model.pth"
 ENGLISH_MODEL_PATH = "weights/10classesMINST.pth"
 FARSI_MODEL_PATH = "weights/10classesHoda.pth"
@@ -70,8 +70,32 @@ def main():
 
     cells = split_cells(board_no_grid)
 
-    print("Detecting digits from Sudoku cells...")
+    print("Detecting board language from all digits...")
 
+    # STEP 1: Detect language for all cells using the 19-class language model
+    all_language_probabilities = []
+    for i in range(9):
+        row_lang_probs = []
+        for j in range(9):
+            cell_img = cells[i][j]
+            
+            # Save each cell for debugging
+            cv2.imwrite(f"output/cells/{i}_{j}.png", cell_img)
+            
+            # Detect language using 19-class model
+            lang_probs = predictor.detect_language(cell_img)
+            row_lang_probs.append(lang_probs)
+        
+        all_language_probabilities.append(row_lang_probs)
+
+    # Flatten and determine board language globally
+    flat_lang_probs = [prob for row in all_language_probabilities for prob in row]
+    board_language = predictor.detect_board_language(flat_lang_probs)
+    print(f"Detected board language: {board_language}")
+
+    print("\nPredicting digits using language-specific model...")
+
+    # STEP 2: Predict digits using the appropriate language-specific 10-class model
     sudoku_grid = []
     all_probabilities = []
 
@@ -82,17 +106,13 @@ def main():
         for j in range(9):
             cell_img = cells[i][j]
 
-            # Save each cell for debugging
-            cv2.imwrite(f"output/cells/{i}_{j}.png", cell_img)
-
             # Save one sample cell like your first script
             if i == 0 and j == 0:
                 cv2.imwrite("output/test_predict.png", cell_img)
 
-            # First call will auto-detect board language using 19-class model
-            # Subsequent calls will use the detected language
+            # Use the detected board language for all predictions
             digit, confidence, probabilities = predictor.predict(
-                cell_img, save_debug_pipeline=False
+                cell_img, board_language=board_language, save_debug_pipeline=False
             )
 
             print(f"Cell ({i},{j}) -> {digit} ({confidence:.3f})")
@@ -109,10 +129,36 @@ def main():
 
     # Validate before solving
     if not is_board_valid(sudoku_grid):
-        print("\n[Error] The detected Sudoku grid is invalid.")
-        print("There is a conflict in a row, column, or 3x3 box.")
-        print("Please check the input image quality or digit recognition model.")
-        return
+        print("\n[Error] The detected Sudoku grid has conflicts.")
+        
+        # Print conflicting cells
+        conflicts = find_conflicts(sudoku_grid)
+        if conflicts:
+            print("Conflicting cells:")
+            for r, c in conflicts:
+                print(f"  Cell ({r},{c}) = {sudoku_grid[r][c]}")
+        
+        # Only attempt to fix Farsi 2/3 confusion if the board is Farsi
+        if board_language == "farsi":
+            print("\nAttempting to fix Farsi 2/3 confusion...")
+            
+            # Try to fix conflicts by swapping 2s and 3s with low confidence
+            fixed_grid = try_fix_farsi_2_3_conflicts(sudoku_grid, all_probabilities)
+            
+            if fixed_grid is not None and is_board_valid(fixed_grid):
+                print("[Success] Fixed conflicts by correcting 2/3 confusion!")
+                sudoku_grid = fixed_grid
+            else:
+                print("[Error] Could not fix conflicts after 2/3 correction.")
+                if fixed_grid is not None:
+                    print("\n--- Corrected Board (with remaining conflicts) ---")
+                    for row in fixed_grid:
+                        print(" ".join(map(str, row)))
+                print("Please check the input image quality or digit recognition model.")
+                return
+        else:
+            print("Please check the input image quality or digit recognition model.")
+            return
 
     print("\nSolving Sudoku...")
 

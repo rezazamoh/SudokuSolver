@@ -179,13 +179,49 @@ class Predictor:
 
         return tensor_img
 
-    def predict(self, image, board_language=None, save_debug_pipeline=True):
+    def detect_language(self, image):
+        """
+        Detect the language of a digit using the 19-class language detection model.
+        
+        Returns:
+            probabilities: 19-class probability array from the language model
+        """
+        # Preprocess the Sudoku cell image
+        processed_img = self._preprocess(image)
+
+        # If cell is empty, return zero probabilities
+        if processed_img is None:
+            probabilities = np.zeros(19, dtype=np.float32)
+            probabilities[0] = 1.0
+            return probabilities
+
+        # Use the 19-class language detection model
+        with torch.no_grad():
+            outputs = self.language_model(processed_img)
+            probabilities = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
+
+        return probabilities
+
+    def predict(self, image, board_language, save_debug_pipeline=True):
+        """
+        Predict the digit in the cell using the appropriate language-specific 10-class model.
+        
+        Args:
+            image: The cell image
+            board_language: The detected board language ("english" or "farsi")
+            save_debug_pipeline: Whether to save debug pipeline images
+        
+        Returns:
+            digit: The predicted digit (0-9)
+            confidence: The confidence score
+            probabilities: 10-class probability array
+        """
         # Preprocess the Sudoku cell image
         processed_img = self._preprocess(image)
 
         # If cell is empty, return digit 0 with confidence 1.0
         if processed_img is None:
-            probabilities = np.zeros(19, dtype=np.float32)
+            probabilities = np.zeros(10, dtype=np.float32)
             probabilities[0] = 1.0
             if save_debug_pipeline:
                 save_pipeline(
@@ -197,34 +233,18 @@ class Predictor:
                 )
             return 0, 1.0, probabilities
 
-        # Step 1: Detect board language using the 19-class language detection model
-        with torch.no_grad():
-            lang_outputs = self.language_model(processed_img)
-            lang_probabilities = F.softmax(lang_outputs, dim=1).squeeze().cpu().numpy()
-
-        # Detect board language from language model output
-        if board_language is None:
-            board_language = self.detect_board_language([lang_probabilities])
-
-        # Step 2: Use the appropriate 10-class model based on detected language
+        # Select the appropriate model based on board language
         model_to_use = self.english_model if board_language == "english" else self.farsi_model
 
+        # Use the language-specific 10-class model
         with torch.no_grad():
             outputs = model_to_use(processed_img)
-            probabilities_10class = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
+            probabilities = F.softmax(outputs, dim=1).squeeze().cpu().numpy()
 
         # Get digit and confidence from 10-class model
-        best_class = int(np.argmax(probabilities_10class))
+        best_class = int(np.argmax(probabilities))
         digit = best_class  # 10-class model already outputs 0-9 directly
-        confidence = float(probabilities_10class[best_class])
-
-        # Convert 10-class probabilities to 19-class format for consistency
-        probabilities = np.zeros(19, dtype=np.float32)
-        if board_language == "english":
-            probabilities[0:10] = probabilities_10class
-        else:  # farsi
-            probabilities[0] = probabilities_10class[0]  # empty class
-            probabilities[10:19] = probabilities_10class[1:10]  # Farsi digits
+        confidence = float(probabilities[best_class])
 
         if save_debug_pipeline:
             save_pipeline(

@@ -463,24 +463,31 @@ python test_chars74k.py
 
 ## Example Run Report from main.py
 
-A sample end-to-end inference run is documented below using the tracked report assets in [reportpics](reportpics). Running [main.py](main.py) produces the following outputs:
+A sample end-to-end inference run is documented below using the tracked report assets in [reportpics](reportpics). Running [main.py](main.py) produces the following outputs.
 
-### Processing pipeline outputs
+### Test Results - Organized by Language
 
-![Original input](reportpics/original.png)
-![Grayscale](reportpics/gray.png)
-![Blurred](reportpics/blur.png)
-![Thresholded](reportpics/threshold.png)
+The project now maintains separate test result folders to compare English and Farsi Sudoku board recognition:
 
-![Board color](reportpics/board_color.png)
-![Board grayscale](reportpics/board_gray.png)
-![Board without grid lines](reportpics/board_no_grid.png)
-![Sample extracted cell](reportpics/test_predict.png)
+- **English Sample:** See [reportpics/english_sample](reportpics/english_sample) for example results on English digit boards
+- **Farsi Sample:** See [reportpics/farsi_sample](reportpics/farsi_sample) for example results on Farsi/Persian digit boards
+
+### Processing pipeline outputs (Farsi Sample)
+![Grayscale](reportpics/farsi_sample/gray.png)
+![Blurred](reportpics/farsi_sample/blur.png)
+![Thresholded](reportpics/farsi_sample/threshold.png)
+
+![Board color](reportpics/farsi_sample/board_color.png)
+![Board grayscale](reportpics/farsi_sample/board_gray.png)
+![Board without grid lines](reportpics/farsi_sample/board_no_grid.png)
+![Sample extracted cell](reportpics/farsi_sample/test_predict.png)
 
 ### Evaluation outputs
 
-![Confusion matrix](reportpics/confusion_matrix.png)
-![Training history graph](reportpics/training_history.png)
+![Confusion matrix](reportpics/english_sample/confusion_matrix.png)
+![Training history graph](reportpics/english_sample/training_history.png)
+
+![Board color](reportpics/english_sample/original.png)
 
 Representative extracted cells and misclassified samples are available in [reportpics/cells](reportpics/cells) and [reportpics/misclassified](reportpics/misclassified). The full 9×9 cell grid is shown below using the extracted-cell images from [output/cells](output/cells):
 
@@ -488,25 +495,27 @@ Representative extracted cells and misclassified samples are available in [repor
 
 | Row 1 | Row 2 | Row 3 |
 |---|---|---|
-| ![Cell 0_0](reportpics/cells/0_0.png) | ![Cell 0_1](reportpics/cells/0_1.png) | ![Cell 0_2](reportpics/cells/0_2.png) |
-| ![Cell 1_0](reportpics/cells/1_0.png) | ![Cell 1_1](reportpics/cells/1_1.png) | ![Cell 1_2](reportpics/cells/1_2.png) |
-| ![Cell 2_0](reportpics/cells/2_0.png) | ![Cell 2_1](reportpics/cells/2_1.png) | ![Cell 2_2](reportpics/cells/2_2.png) |
+| ![Cell 0_0](reportpics/english_sample/cells/0_0.png) | ![Cell 0_1](reportpics/english_sample/cells/0_1.png) | ![Cell 0_2](reportpics/english_sample/cells/0_2.png) |
+| ![Cell 1_0](reportpics/english_sample/cells/1_0.png) | ![Cell 1_1](reportpics/english_sample/cells/1_1.png) | ![Cell 1_2](reportpics/english_sample/cells/1_2.png) |
+| ![Cell 2_0](reportpics/english_sample/cells/2_0.png) | ![Cell 2_1](reportpics/english_sample/cells/2_1.png) | ![Cell 2_2](reportpics/english_sample/cells/2_2.png) |
 
 | Row 4 | Row 5 | Row 6 |
 |---|---|---|
-| ![Cell 3_0](reportpics/cells/3_0.png) | ![Cell 3_1](reportpics/cells/3_1.png) | ![Cell 3_2](reportpics/cells/3_2.png) |
-| ![Cell 4_0](reportpics/cells/4_0.png) | ![Cell 4_1](reportpics/cells/4_1.png) | ![Cell 4_2](reportpics/cells/4_2.png) |
-| ![Cell 5_0](reportpics/cells/5_0.png) | ![Cell 5_1](reportpics/cells/5_1.png) | ![Cell 5_2](reportpics/cells/5_2.png) |
+| ![Cell 3_0](reportpics/english_sample/cells/3_0.png) | ![Cell 3_1](reportpics/english_sample/cells/3_1.png) | ![Cell 3_2](reportpics/english_sample/cells/3_2.png) |
+| ![Cell 4_0](reportpics/english_sample/cells/4_0.png) | ![Cell 4_1](reportpics/english_sample/cells/4_1.png) | ![Cell 4_2](reportpics/english_sample/cells/4_2.png) |
+| ![Cell 5_0](reportpics/english_sample/cells/5_0.png) | ![Cell 5_1](reportpics/english_sample/cells/5_1.png) | ![Cell 5_2](reportpics/english_sample/cells/5_2.png) |
 
 | Row 7 | Row 8 | Row 9 |
 |---|---|---|
-| ![Cell 6_0](reportpics/cells/6_0.png) | ![Cell 6_1](reportpics/cells/6_1.png) | ![Cell 6_2](reportpics/cells/6_2.png) |
-| ![Cell 7_0](reportpics/cells/7_0.png) | ![Cell 7_1](reportpics/cells/7_1.png) | ![Cell 7_2](reportpics/cells/7_2.png) |
-| ![Cell 8_0](reportpics/cells/8_0.png) | ![Cell 8_1](reportpics/cells/8_1.png) | ![Cell 8_2](reportpics/cells/8_2.png) |
+| ![Cell 6_0](reportpics/english_sample/cells/6_0.png) | ![Cell 6_1](reportpics/english_sample/cells/6_1.png) | ![Cell 6_2](reportpics/english_sample/cells/6_2.png) |
+| ![Cell 7_0](reportpics/english_sample/cells/7_0.png) | ![Cell 7_1](reportpics/english_sample/cells/7_1.png) | ![Cell 7_2](reportpics/english_sample/cells/7_2.png) |
+| ![Cell 8_0](reportpics/english_sample/cells/8_0.png) | ![Cell 8_1](reportpics/english_sample/cells/8_1.png) | ![Cell 8_2](reportpics/english_sample/cells/8_2.png) |
 
 </div>
 
-The sample run produced the following detected grid:
+#### English Sample - Detected Grid and Solution
+
+The English sample run produced the following detected grid:
 
 ```text
 9 8 5 4 0 1 0 0 0
@@ -534,7 +543,148 @@ After solving, the pipeline recovered the completed Sudoku grid:
 2 5 9 7 8 4 3 6 1
 ```
 
-The inference run also reported the detected board language as English.
+The English sample run detected the board language as **English**.
+
+#### Farsi Sample - Detected Grid and Solution
+
+The Farsi sample run produced the following detected grid (before conflict resolution):
+
+```text
+1 9 3 5 3 0 6 8 7
+4 6 0 0 9 1 5 3 3
+0 0 0 3 0 6 9 0 0
+6 0 0 4 1 2 7 5 8
+2 4 5 6 7 8 0 3 9
+7 8 0 9 3 0 0 4 6
+0 1 0 0 4 7 3 0 0
+8 0 0 1 5 0 0 0 2
+0 5 4 3 6 9 8 7 1
+```
+
+**Conflict Detection and Resolution:** The system detected conflicts due to repeated 3s. Using the Farsi 2/3 confusion resolution algorithm, it corrected cells with low confidence scores:
+- Cell (0,4): 3 with confidence 0.748 → changed to 2
+- Cell (1,7): 3 with confidence 0.725 → changed to 2
+
+**Corrected Grid (after 2/3 conflict resolution):**
+
+```text
+1 9 3 5 2 0 6 8 7
+4 6 0 0 9 1 5 2 3
+0 0 0 3 0 6 9 0 0
+6 0 0 4 1 2 7 5 8
+2 4 5 6 7 8 0 3 9
+7 8 0 9 3 0 0 4 6
+0 1 0 0 4 7 3 0 0
+8 0 0 1 5 0 0 0 2
+0 5 4 2 6 9 8 7 1
+```
+
+**Solved Grid:**
+
+```text
+1 9 3 5 2 4 6 8 7
+4 6 8 7 9 1 5 2 3
+5 2 7 3 8 6 9 1 4
+6 3 9 4 1 2 7 5 8
+2 4 5 6 7 8 1 3 9
+7 8 1 9 3 5 2 4 6
+9 1 2 8 4 7 3 6 5
+8 7 6 1 5 3 4 9 2
+3 5 4 2 6 9 8 7 1
+```
+
+The Farsi sample run detected the board language as **Farsi** and successfully resolved the 2/3 confusion through the confidence-based correction system.
+
+## Real Sudoku Picture Sample
+
+This section documents a complete end-to-end run using a real photograph of a handwritten Sudoku puzzle.
+
+### Complete Processing Pipeline
+
+All intermediate processing steps are fully captured and stored in [reportpics/real_sample](reportpics/real_sample):
+
+#### Step 1: Input & Preprocessing
+![Original input](reportpics/real_sample/original.png)
+![Grayscale conversion](reportpics/real_sample/gray.png)
+![Gaussian blur](reportpics/real_sample/blur.png)
+![Thresholding](reportpics/real_sample/threshold.png)
+
+#### Step 2: Board Detection & Warping
+![Board in color](reportpics/real_sample/board_color.png)
+![Board in grayscale](reportpics/real_sample/board_gray.png)
+![Grid line removal - threshold](reportpics/real_sample/debug_threshold.png)
+![Grid line removal - LSD mask](reportpics/real_sample/debug_lsd_mask.png)
+![Board after grid removal](reportpics/real_sample/board_no_grid.png)
+
+#### Step 3: Cell Extraction
+All 81 cells have been extracted and saved in [reportpics/real_sample/cells](reportpics/real_sample/cells). Sample from different regions:
+
+<div align="center">
+
+| Row 1 | Row 2 | Row 3 |
+|---|---|---|
+| ![Cell 0_0](reportpics/real_sample/cells/0_0.png) | ![Cell 0_3](reportpics/real_sample/cells/0_3.png) | ![Cell 0_6](reportpics/real_sample/cells/0_6.png) |
+| ![Cell 1_0](reportpics/real_sample/cells/1_0.png) | ![Cell 1_3](reportpics/real_sample/cells/1_3.png) | ![Cell 1_6](reportpics/real_sample/cells/1_6.png) |
+| ![Cell 2_0](reportpics/real_sample/cells/2_0.png) | ![Cell 2_3](reportpics/real_sample/cells/2_3.png) | ![Cell 2_6](reportpics/real_sample/cells/2_6.png) |
+
+| Row 4 | Row 5 | Row 6 |
+|---|---|---|
+| ![Cell 3_0](reportpics/real_sample/cells/3_0.png) | ![Cell 3_3](reportpics/real_sample/cells/3_3.png) | ![Cell 3_6](reportpics/real_sample/cells/3_6.png) |
+| ![Cell 4_0](reportpics/real_sample/cells/4_0.png) | ![Cell 4_3](reportpics/real_sample/cells/4_3.png) | ![Cell 4_6](reportpics/real_sample/cells/4_6.png) |
+| ![Cell 5_0](reportpics/real_sample/cells/5_0.png) | ![Cell 5_3](reportpics/real_sample/cells/5_3.png) | ![Cell 5_6](reportpics/real_sample/cells/5_6.png) |
+
+| Row 7 | Row 8 | Row 9 |
+|---|---|---|
+| ![Cell 6_0](reportpics/real_sample/cells/6_0.png) | ![Cell 6_3](reportpics/real_sample/cells/6_3.png) | ![Cell 6_6](reportpics/real_sample/cells/6_6.png) |
+| ![Cell 7_0](reportpics/real_sample/cells/7_0.png) | ![Cell 7_3](reportpics/real_sample/cells/7_3.png) | ![Cell 7_6](reportpics/real_sample/cells/7_6.png) |
+| ![Cell 8_0](reportpics/real_sample/cells/8_0.png) | ![Cell 8_3](reportpics/real_sample/cells/8_3.png) | ![Cell 8_6](reportpics/real_sample/cells/8_6.png) |
+
+</div>
+
+### Real Sample Results
+
+**Board Language Detection:** English
+
+**Detected Sudoku Grid:**
+
+```text
+0 0 0 6 0 4 7 0 0
+7 0 6 0 0 0 0 0 9
+0 0 0 0 0 5 0 8 0
+0 7 0 0 2 0 0 9 3
+8 0 0 0 0 0 0 0 5
+4 3 0 0 1 0 0 7 0
+0 5 0 2 0 0 0 0 0
+3 0 0 0 0 0 7 0 8
+0 0 2 3 0 1 0 0 0
+```
+
+**Recognition Confidence Scores (Key Cells):**
+- Cell (0,3): 6 with confidence 0.994
+- Cell (0,5): 4 with confidence 0.994
+- Cell (1,2): 6 with confidence 0.994
+- Cell (2,5): 5 with confidence 1.000
+- Cell (3,4): 2 with confidence 0.981
+- Cell (5,4): 1 with confidence 0.967
+- Cell (5,7): 7 with confidence 0.939
+- Cell (6,3): 2 with confidence 0.992
+- Cell (7,6): 7 with confidence 0.508 (low confidence)
+- Cell (8,2): 2 with confidence 0.991
+- Cell (8,5): 1 with confidence 0.929
+
+**Validation Status:** ❌ **Conflicts Detected**
+
+The system detected a duplicate digit conflict:
+- **Cell (0,6) = 7** conflicts with **Cell (7,6) = 7**
+
+This indicates that the real photograph had recognition challenges in one or both of these cells. The lower confidence score for Cell (7,6) (0.508) suggests this cell may have been recognized incorrectly due to image quality, lighting, or handwriting style variations in the real photograph.
+
+### Dataset Files Preserved
+
+The real sample run includes:
+- **[reportpics/real_sample/cells/](reportpics/real_sample/cells/)** - All 81 extracted cell images
+- **[reportpics/real_sample/extracted_digits/](reportpics/real_sample/extracted_digits/)** - Raw and processed digit extractions for debugging
+- **[reportpics/real_sample/pipeline_debug/](reportpics/real_sample/pipeline_debug/)** - Additional pipeline debugging outputs
 
 ## Evaluation Report from evaluate.py
 
@@ -546,7 +696,7 @@ The evaluation script produces a quantitative report for the trained classifier.
 - Macro average F1-score: 0.9940
 - Weighted average F1-score: 0.9942
 
-The full report is stored in [reportpics/classification_report.txt](reportpics/classification_report.txt), and the visual confusion matrix is saved as [reportpics/confusion_matrix.png](reportpics/confusion_matrix.png). Misclassified samples are also stored in [reportpics/misclassified](reportpics/misclassified) for manual review.
+The full report is stored in [reportpics/english_sample/classification_report.txt](reportpics/english_sample/classification_report.txt), and the visual confusion matrix is saved as [reportpics/english_sample/confusion_matrix.png](reportpics/english_sample/confusion_matrix.png). Misclassified samples are also stored in [reportpics/misclassified](reportpics/misclassified) for manual review.
 
 ## Project Directory Structure
 
