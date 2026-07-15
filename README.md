@@ -482,10 +482,60 @@ The project now maintains separate test result folders to compare English and Fa
 ![Board without grid lines](reportpics/farsi_sample/board_no_grid.png)
 ![Sample extracted cell](reportpics/farsi_sample/test_predict.png)
 
-### Evaluation outputs
+### Evaluation outputs (for 19-class model)
 
 ![Confusion matrix](reportpics/english_sample/confusion_matrix.png)
 ![Training history graph](reportpics/english_sample/training_history.png)
+
+## Evaluation outputs (for English model)
+
+![confusion_matrix_MNIST](C:\Codes\CVProject\reportpics\english_sample\confusion_matrix_MNIST.png)
+
+```
+              precision    recall  f1-score   support
+
+           0     1.0000    1.0000    1.0000      1002
+           1     0.9956    0.9965    0.9960      1135
+           2     0.9923    0.9961    0.9942      1032
+           3     0.9931    0.9950    0.9941      1010
+           4     0.9919    0.9959    0.9939       982
+           5     0.9911    0.9933    0.9922       892
+           6     0.9958    0.9948    0.9953       958
+           7     0.9961    0.9903    0.9932      1028
+           8     0.9969    0.9938    0.9954       974
+           9     0.9940    0.9911    0.9926      1009
+
+    accuracy                         0.9947     10022
+   macro avg     0.9947    0.9947    0.9947     10022
+weighted avg     0.9947    0.9947    0.9947     10022
+
+```
+
+
+
+## Evaluation outputs (for Farsi model)
+
+![confusion_matrix_HODA](C:\Codes\CVProject\reportpics\farsi_sample\confusion_matrix_HODA.png)
+
+```
+              precision    recall  f1-score   support
+
+           0     1.0000    1.0000    1.0000      2000
+           1     0.9960    0.9990    0.9975      2000
+           2     0.9861    0.9965    0.9913      2000
+           3     0.9975    0.9900    0.9937      2000
+           4     0.9975    0.9970    0.9972      2000
+           5     0.9985    0.9990    0.9988      2000
+           6     0.9970    0.9965    0.9967      2000
+           7     0.9990    0.9960    0.9975      2000
+           8     1.0000    0.9985    0.9992      2000
+           9     0.9970    0.9960    0.9965      2000
+
+    accuracy                         0.9969     20000
+   macro avg     0.9969    0.9969    0.9969     20000
+weighted avg     0.9969    0.9969    0.9969     20000
+
+```
 
 ![Board color](reportpics/english_sample/original.png)
 

@@ -22,7 +22,7 @@ DEVICE = torch.device(
 
 TEST_DIR = "dataset/test"
 
-MODEL_PATH = "weights/10classesHoda.pth"
+MODEL_PATH = "weights/10classesMINST.pth"
 
 BATCH_SIZE = 256
 
@@ -70,7 +70,7 @@ y_pred = []
 
 
 os.makedirs(
-    "output/misclassifiedHODA",
+    "output/misclassifiedMNIST",
     exist_ok=True
 )
 
@@ -98,7 +98,7 @@ with torch.no_grad():
                 img = images[i].cpu().squeeze().numpy()
 
                 plt.imsave(
-                    f"output/misclassified/{counter}_T{labels[i].item()}_P{pred[i].item()}.png",
+                    f"output/misclassifiedMNIST/{counter}_T{labels[i].item()}_P{pred[i].item()}.png",
                     img,
                     cmap="gray"
                 )
@@ -114,7 +114,7 @@ print(classification_report(
 
 
 with open(
-    "output/classification_hoda_report.txt",
+    "output/classification_mnist_report.txt",
     "w",
     encoding="utf8"
 ) as f:
@@ -174,7 +174,7 @@ for i in range(cm.shape[0]):
 
 plt.tight_layout()
 plt.savefig(
-    "output/confusion_matrix_HODA.png",
+    "output/confusion_matrix_MNIST.png",
     dpi=300
 )
 plt.close()
